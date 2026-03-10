@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klinisches Diagnose-Tool: Vorderer Knieschmerz & Differenzialdiagnosen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .statement-card { transition: all 0.2s ease-in-out; }
+        .statement-card:hover { transform: translateY(-2px); }
+        .accordion-content { transition: max-height(0.3s) ease-in-out, padding 0.3s ease; max-height: 0; overflow: hidden; }
+        .accordion-content.open { max-height: 400px; }
+        
+        .image-wrapper {
+            background-color: #fcf9f5;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 0.5rem;
+        }
+
+        .mode-btn-active {
+            background-color: #2563eb;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .side-btn-active {
+            background-color: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+
+        .demo-btn-active {
+            background-color: #4f46e5 !important;
+            color: white !important;
+            border-color: #4f46e5 !important;
+        }
+
+        #justifications-container::-webkit-scrollbar { width: 4px; }
+        #justifications-container::-webkit-scrollbar-track { background: #f1f1f1; }
+        #justifications-container::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-50 flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-10 hidden md:flex shrink-0">
+        <div class="p-6 border-b border-slate-700">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-stethoscope text-blue-400"></i>
+                OrthoDiagnostik
+            </h1>
+        </div>
+        <nav class="flex-1 py-4">
+            <button onclick="switchTab('diagnostik')" id="nav-diagnostik" class="w-full flex items-center gap-3 px-6 py-3 bg-blue-600 border-l-4 border-blue-400 text-left transition-colors">
+                <i class="fa-solid fa-clipboard-list"></i> Diagnostik
+            </button>
+            <button onclick="switchTab('therapie')" id="nav-therapie" class="w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 border-l-4 border-transparent text-left transition-colors">
+                <i class="fa-solid fa-notes-medical"></i> Therapie
+            </button>
+        </nav>
+        <div class="p-4 text-xs text-slate-500 border-t border-slate-700 leading-relaxed">
+            © 2026 Medical App<br>D1:PFPS, D2:ITBS, D3:PST, D4:OA.
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm px-6 py-4 z-20 flex flex-col items-center border-b shrink-0">
+            <div class="flex items-center gap-4 mb-2">
+                <div class="inline-flex bg-gray-100 rounded-lg p-1 border">
+                    <button id="mode-patient" onclick="setMode('patient')" class="px-6 py-1.5 rounded-md text-sm font-semibold transition-all">Patient</button>
+                    <button id="mode-therapeut" onclick="setMode('therapeut')" class="px-6 py-1.5 rounded-md text-sm font-semibold transition-all mode-btn-active">Therapeut</button>
+                </div>
+            </div>
+            <h2 id="page-title" class="text-xl font-bold text-gray-800">Umfassende Knie-Diagnostik</h2>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8">
+            <div id="view-diagnostik" class="max-w-7xl mx-auto flex flex-col xl:flex-row gap-8">
+                
+                <div class="flex-1 space-y-8">
+                    
+                    <!-- 0. Allgemeine Informationen -->
+                    <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 id="label-demographics" class="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                            <i class="fa-solid fa-id-card text-indigo-500"></i> Allgemeine Informationen
+                        </h3>
+                        
+                        <div class="flex flex-wrap gap-x-16 gap-y-6 mb-8 border-b border-gray-50 pb-6">
+                            <div class="flex flex-col items-center gap-3">
+                                <label id="label-age" class="text-sm font-bold text-gray-600 uppercase tracking-tight">Alter</label>
+                                <div class="flex gap-2">
+                                    <button id="age1" class="age-btn px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-all hover:bg-gray-100" onclick="setExclusive('age', 'age1')"><30J.</button>
+                                    <button id="age2" class="age-btn px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-all hover:bg-gray-100" onclick="setExclusive('age', 'age2')">30-50J.</button>
+                                    <button id="age3" class="age-btn px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-all hover:bg-gray-100" onclick="setExclusive('age', 'age3')">>50J.</button>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center gap-3">
+                                <label id="label-gender" class="text-sm font-bold text-gray-600 uppercase tracking-tight">Geschlecht</label>
+                                <div class="flex gap-2">
+                                    <button id="gen1" class="gender-btn px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-all hover:bg-gray-100" onclick="setExclusive('gender', 'gen1')">Männlich</button>
+                                    <button id="gen2" class="gender-btn px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-all hover:bg-gray-100" onclick="setExclusive('gender', 'gen2')">Weiblich</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col items-center gap-3">
+                            <label id="label-activity" class="text-sm font-bold text-gray-600 uppercase tracking-tight mb-1 text-center">Aktivitätsniveau</label>
+                            <div id="activity-container" class="flex flex-col gap-3 w-full"></div>
+                        </div>
+                    </section>
+
+                    <!-- 1. Entstehungsgeschichte -->
+                    <section>
+                        <h3 id="label-history" class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-blue-500"></i> Wie hat es angefangen?
+                        </h3>
+                        <div id="history-container" class="flex flex-col gap-3"></div>
+                    </section>
+
+                    <!-- 2. Aktuelle Symptomatik -->
+                    <section>
+                        <h3 id="label-symptoms" class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-heart-pulse text-red-500"></i> Wie äußern sich die Beschwerden?
+                        </h3>
+                        <div id="symptoms-container" class="flex flex-col gap-3"></div>
+                    </section>
+
+                    <!-- 3. Symptomlokation -->
+                    <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-8 mb-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 id="label-location" class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i class="fa-solid fa-crosshairs text-purple-500"></i> Lokalisation (wo genau tut es weh?)
+                            </h3>
+                        </div>
+                        
+                        <div class="mb-8 flex flex-col items-center">
+                            <h4 id="label-visual-ref" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Mehrfachauswahl möglich</h4>
+                            
+                            <div class="inline-flex bg-gray-100 rounded-md p-0.5 border text-[10px] font-bold uppercase mb-6">
+                                <button id="side-links" onclick="setSide('links')" class="px-3 py-1 rounded transition-all">Linkes Knie</button>
+                                <button id="side-rechts" onclick="setSide('rechts')" class="px-3 py-1 rounded transition-all side-btn-active">Rechtes Knie</button>
+                            </div>
+
+                            <div id="location-images-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full"></div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-6">
+                            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 text-center">Nähere Beschreibung</h4>
+                            <div id="location-statements-container" class="flex flex-col gap-3"></div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right Column -->
+                <div class="w-full xl:w-96 shrink-0">
+                    <div class="bg-white rounded-xl shadow-md border border-gray-100 p-6 sticky top-4">
+                        <h3 id="label-result-title" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Klinisches Ergebnis</h3>
+                        
+                        <!-- Empty State: Gar nichts ausgewählt -->
+                        <div id="empty-state" class="text-center py-8 text-gray-400">
+                            <i class="fa-solid fa-hand-pointer text-3xl mb-2 opacity-50"></i>
+                            <p id="label-empty" class="text-sm"></p>
+                        </div>
+
+                        <!-- Info State: Zu wenige Antworten (1-4) -->
+                        <div id="insufficient-data-state" class="hidden text-center py-8 px-4 bg-amber-50 rounded-lg border border-amber-100 text-amber-700">
+                            <i class="fa-solid fa-circle-exclamation text-3xl mb-3 opacity-80"></i>
+                            <p class="text-sm font-bold mb-2">Zu wenige Antworten</p>
+                            <p class="text-xs leading-relaxed">Bitte wählen Sie mindestens 5 Parameter aus, um eine zuverlässige klinische Analyse berechnen zu können.</p>
+                            <div class="mt-4 flex justify-center items-center gap-2">
+                                <div class="h-1.5 w-full bg-amber-200 rounded-full overflow-hidden max-w-[100px]">
+                                    <div id="progress-bar-fill" class="h-full bg-amber-500 transition-all duration-300" style="width: 20%"></div>
+                                </div>
+                                <span id="progress-text" class="text-[10px] font-bold uppercase tracking-tighter">1/5</span>
+                            </div>
+                        </div>
+
+                        <!-- Results State: Genügend Antworten (>= 5) -->
+                        <div id="results-container" class="hidden">
+                            <div id="reliability-warning" class="mb-5 p-3 rounded-lg text-sm flex items-start gap-3 transition-colors">
+                                <i id="warning-icon"></i>
+                                <div><strong id="warning-title" class="block mb-0.5"></strong><span id="warning-text" class="text-xs"></span></div>
+                            </div>
+                            
+                            <div class="space-y-3" id="diagnosis-bars"></div>
+
+                            <!-- Info-Balken zur Aussagekraft -->
+                            <div class="mt-4 p-2.5 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-gray-400 text-xs"></i>
+                                <p class="text-[10px] text-gray-500 leading-tight">Ab 70% Wahrscheinlichkeit besteht eine sehr hohe Aussagekraft.</p>
+                            </div>
+
+                            <!-- Dynamische Diagnose-Infobox -->
+                            <div id="dynamic-diagnosis-info" class="hidden mt-6 p-4 rounded-xl border-2 flex gap-3 transition-all duration-300">
+                                <i class="fa-solid fa-lightbulb text-xl shrink-0 mt-0.5"></i>
+                                <div class="space-y-1.5">
+                                    <h4 id="info-box-title" class="text-xs font-bold uppercase tracking-wider"></h4>
+                                    <p id="info-box-desc" class="text-[11px] leading-relaxed whitespace-pre-wrap"></p>
+                                </div>
+                            </div>
+
+                            <div class="border-t pt-4 mt-6">
+                                <h4 id="label-explanation" class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wider"></h4>
+                                <div id="justifications-container" class="space-y-2 max-h-[400px] overflow-y-auto pr-2 pb-4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let selectedSide = 'rechts';
+
+        const diagnosisProfiles = {
+            D1: {
+                name: "Patellofemorales Schmerzsyndrom (PFPS / Vorderer Knieschmerz)",
+                description: "Wie es sich anfühlt:\nHierbei handelt es sich um einen eher diffusen, dumpfen oder ziehenden Schmerz, der sich schwer mit nur einem Finger lokalisieren lässt. Er sitzt direkt hinter, unter oder flächig rund um die Kniescheibe. Das Knie schmerzt vor allem dann, wenn es unter Körpergewicht stark gebeugt wird. Wer hiervon betroffen ist, hat typischerweise Probleme bei tiefen Kniebeugen (Squats), beim Treppensteigen (besonders beim Hinabgehen) oder beim Hinknien. Sehr charakteristisch ist zudem das sogenannte „Theaterzeichen“: Nach längerem Sitzen mit angewinkelten Beinen – etwa im Kino, am Schreibtisch oder auf längeren Autofahrten – schmerzt das Knie und fühlt sich beim Aufstehen zunächst unangenehm an.",
+                bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-800"
+            },
+            D2: {
+                name: "Iliotibialband-Syndrom (ITBS / Läuferknie)",
+                description: "Wie es sich anfühlt:\nPatienten mit einem Läuferknie berichten über einen sehr spitzen, oft als „messerscharf“ oder brennend empfundenen Schmerz, der punktgenau an der direkten Außenseite des Knies auftritt. Der Schmerz ist tückisch: Er ist in Ruhe völlig verschwunden und tritt auch beim Sport meist nicht sofort auf, sondern erst nach einer ganz bestimmten Zeit oder Distanz (z.B. immer ab Kilometer drei). Ein absolutes Paradebeispiel für diese Verletzung ist, dass der Schmerz beim Joggen so stark wird, dass man abbrechen muss – wechselt man dann aber ins normale Gehen, verschwindet der Schmerz oft schlagartig. Auch das Treppabsteigen oder Bergablaufen wird an der Knie-Außenseite als extrem unangenehm empfunden.",
+                bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-800"
+            },
+            D3: {
+                name: "Patellasehnen-Tendinopathie (PST)",
+                description: "Häufig bei Sprungsportarten ('Jumpers Knee'). Der Schmerz ist punktgenau am Sehnenansatz unter der Kniescheibe lokalisiert. Charakteristisch ist das 'Warm-up-Phänomen': Schmerz zu Beginn, Besserung nach dem Aufwärmen, Verschlechterung nach der Belastung.",
+                bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-800"
+            },
+            D4: {
+                name: "Knie-Arthrose (Gonarthrose)",
+                description: "Wie es sich anfühlt:\nDie Arthrose betrifft meist Menschen ab der fünften Lebensdekade und äußert sich durch einen klassischen Belastungsschmerz tief im Gelenk. Das absolut typischste Merkmal ist der sogenannte „Anlaufschmerz“ gepaart mit einer kurzen Morgensteifigkeit: Nach dem Aufstehen aus dem Bett oder nach längeren Ruhepausen auf dem Sofa fühlt sich das Knie extrem steif, unbeweglich und schmerzhaft an. Sobald man jedoch einige Schritte geht, „läuft sich das Gelenk ein“ und die Steifigkeit verschwindet meist innerhalb der ersten 30 Minuten. Viele Patienten berichten zudem von einem spür- und hörbaren Knirschen oder Reiben (Krepitationen) im Gelenk bei Bewegungen sowie einer generellen Abnahme der Gehstrecke.",
+                bg: "bg-yellow-50", border: "border-yellow-200", text: "text-yellow-800"
+            }
+        };
+
+        function getKneeSvg(highlightArea) {
+            const isLeft = selectedSide === 'links';
+            const transform = isLeft ? `transform="scale(-1, 1) translate(-120, 0)"` : '';
+            
+            const glow = `<circle cx="${highlightArea.x}" cy="${highlightArea.y}" r="${highlightArea.r || 8}" fill="rgba(220, 38, 38, 0.4)" filter="blur(3px)" />
+                          <circle cx="${highlightArea.x}" cy="${highlightArea.y}" r="${(highlightArea.r || 8)/2}" fill="rgba(220, 38, 38, 0.85)" />`;
+            const broad = `<ellipse cx="${highlightArea.x}" cy="${highlightArea.y}" rx="25" ry="18" fill="rgba(220, 38, 38, 0.3)" filter="blur(5px)" />
+                           <ellipse cx="${highlightArea.x}" cy="${highlightArea.y}" rx="15" ry="10" fill="rgba(220, 38, 38, 0.5)" filter="blur(3px)" />`;
+            const ring = `<path d="M 40,55 C 40,35 80,35 80,55 C 80,85 40,85 40,55 Z" fill="none" stroke="rgba(220, 38, 38, 0.7)" stroke-width="8" filter="blur(2px)"/>`;
+            const jointline = `<ellipse cx="60" cy="110" rx="32" ry="8" fill="rgba(220, 38, 38, 0.3)" filter="blur(4px)" />
+                               <ellipse cx="60" cy="110" rx="24" ry="4" fill="rgba(220, 38, 38, 0.6)" filter="blur(1px)" />`;
+            const diffusePatella = `<ellipse cx="60" cy="60" rx="35" ry="30" fill="rgba(220, 38, 38, 0.3)" filter="blur(6px)" />`;
+            const medialStripe = `<rect x="80" y="40" width="15" height="50" rx="5" fill="rgba(220, 38, 38, 0.3)" filter="blur(4px)" />`;
+            const lateralStripe = `<rect x="25" y="40" width="15" height="50" rx="5" fill="rgba(220, 38, 38, 0.3)" filter="blur(4px)" />`;
+
+            let highlight = glow;
+            if (highlightArea.type === 'broad') highlight = broad;
+            else if (highlightArea.type === 'ring') highlight = ring;
+            else if (highlightArea.type === 'jointline') highlight = jointline;
+            else if (highlightArea.type === 'diffusePatella') highlight = diffusePatella;
+            else if (highlightArea.type === 'medialStripe') highlight = medialStripe;
+            else if (highlightArea.type === 'lateralStripe') highlight = lateralStripe;
+
+            return `<svg viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-sm">
+                <g ${transform}>
+                    <path d="M 30,5 Q 35,50 30,75 Q 25,100 35,130 L 32,155 L 88,155 L 85,130 Q 95,100 90,75 Q 85,50 90,5 Z" fill="#FBF5EE" stroke="#E6DED5" stroke-width="1.5" />
+                    <path d="M 28,112 Q 22,120 28,128" stroke="#DED5CC" stroke-width="2" fill="none" opacity="0.8" />
+                    <path d="M 40,5 L 42,45 Q 42,55 35,65" stroke="#DED5CC" stroke-width="3" fill="none" opacity="0.6" />
+                    <path d="M 80,5 L 78,45 Q 78,55 85,65" stroke="#DED5CC" stroke-width="3" fill="none" opacity="0.6" />
+                    <path d="M 35,115 Q 60,110 85,115" stroke="#DED5CC" stroke-width="3" fill="none" opacity="0.6" />
+                    <path d="M 50,48 Q 60,40 70,48 Q 74,65 60,76 Q 46,65 50,48" fill="#FFF" stroke="#C8BFB5" stroke-width="1.8" />
+                    <path d="M 55,75 L 53,115 L 67,115 L 65,75 Z" fill="#F4F2F0" stroke="#DED5CC" stroke-width="1" />
+                    <path d="M 52,115 Q 60,122 68,115" stroke="#C8BFB5" stroke-width="1.2" fill="none" />
+                    ${highlight}
+                </g>
+            </svg>`;
+        }
+
+        let currentMode = 'therapeut';
+        const colors = { D1: 'bg-orange-500', D2: 'bg-teal-500', D3: 'bg-blue-600', D4: 'bg-yellow-500' };
+
+        const contentData = {
+            therapeut: {
+                pageTitle: "Differenzialdiagnostik: Vorderer & Lateraler Knieschmerz",
+                labelDemographics: "Allgemeine Informationen",
+                labelHistory: "Wie hat es angefangen?",
+                labelSymptoms: "Wie äußern sich die Beschwerden?",
+                labelLocation: "Lokalisation (wo genau tut es weh?)",
+                labelVisualRef: "Visuelle Anatomie-Referenz",
+                labelResultTitle: "Punktewertung (Algorithmus)",
+                labelEmpty: "Wählen Sie klinische Parameter aus.",
+                labelExplanation: "Punkte-Verteilung (Korrelation & Widerspruch)",
+                labelD1Name: "PFSS", labelD2Name: "ITBS", labelD3Name: "PST", labelD4Name: "OA",
+                warningLowTitle: "Geringe klinische Aussagekraft",
+                warningLowText: "Bei nur 1-2 Parametern ist die diagnostische Trennschärfe unzureichend.",
+                warningHighTitle: "Klinische Aussagekraft gegeben",
+                warningHighText: "Datenbasis für Differenzialdiagnostik vorhanden."
+            },
+            patient: {
+                pageTitle: "Analyse Ihres Knieschmerzes",
+                labelDemographics: "Allgemeine Informationen",
+                labelHistory: "Wie hat es angefangen?",
+                labelSymptoms: "Wie äußern sich die Beschwerden?",
+                labelLocation: "Lokalisation (wo genau tut es weh?)",
+                labelVisualRef: "Mehrfachauswahl möglich",
+                labelResultTitle: "Wahrscheinlichste Ursachen",
+                labelEmpty: "Bitte beantworten Sie die Fragen links.",
+                labelExplanation: "Grundlagen der Einschätzung",
+                labelD1Name: "Vorderer Knie Schmerz", labelD2Name: "Iliotibialband-Syndrom", labelD3Name: "Patella-Sehnen-Tendinopathie", labelD4Name: "Gonarthrose",
+                warningLowTitle: "Zu wenige Angaben",
+                warningLowText: "Bitte mehr Details angeben für ein genaueres Ergebnis.",
+                warningHighTitle: "Gute Datengrundlage",
+                warningHighText: "Ihre Angaben passen zu klinischen Mustern."
+            }
+        };
+
+        const statements = [
+            // AGE
+            { id: 'age1', category: 'age', weights: { D1: 3, D2: 3, D3: 3, D4: -15 }, text: { therapeut: '<30J.', patient: '<30J.' }, rationale: { therapeut: 'Typische Altersgruppe für funktionelle Syndrome.', patient: 'In Ihrem Alter sind Überlastungsreaktionen häufiger als Verschleiß.' } },
+            { id: 'age2', category: 'age', weights: {}, text: { therapeut: '30-50J.', patient: '30-50J.' }, rationale: { therapeut: 'Keine spezifische Korrelation in dieser Altersgruppe.', patient: 'Keine spezifische Korrelation in dieser Altersgruppe.' } },
+            { id: 'age3', category: 'age', weights: { D1: -5, D2: -5, D3: -5, D4: 6 }, text: { therapeut: '>50J.', patient: '>50J.' }, rationale: { therapeut: 'Starker Prädiktor für degenerative Veränderungen (OA).', patient: 'Mit zunehmendem Alter rücken Verschleißerscheinungen in den Fokus.' } },
+            
+            // GENDER
+            { id: 'gen1', category: 'gender', weights: {}, text: { therapeut: 'Männlich', patient: 'Männlich' }, rationale: { therapeut: 'Kombinationslogik mit Alter aktiv.', patient: 'Geschlecht Männlich' } },
+            { id: 'gen2', category: 'gender', weights: {}, text: { therapeut: 'Weiblich', patient: 'Weiblich' }, rationale: { therapeut: 'Kombinationslogik mit Alter aktiv.', patient: 'Geschlecht Weiblich' } },
+
+            // ACTIVITY
+            { id: 'act1', category: 'activity', weights: { D1: 3, D2: 3, D3: 6 }, text: { therapeut: 'Regelmäßiger Stop&Go-Sport.', patient: 'Ich betreibe regelmäßigen Stop&Go-Sport (Fußball, Basketball, Tennis, Volleyball,..)' }, rationale: { therapeut: 'Hohe Lastspitzen für Patellasehne (D3) und PFJ (D1).', patient: 'Sportarten mit viel Springen und Stoppen.' } },
+            { id: 'act2', category: 'activity', weights: { D1: 3, D2: 6, D3: 3 }, text: { therapeut: 'Regelmäßiger Ausdauersport.', patient: 'Ich betreibe regelmäßigen Ausdauersport (Laufen, Radfahren, Wandern,..)' }, rationale: { therapeut: 'Repetitive zyklische Belastung (ITBS-Risiko).', patient: 'Regelmäßige, lange Belastungen.' } },
+
+            // HISTORY
+            { id: 'h1', category: 'history', weights: { D1: 3, D2: -5, D3: 3 }, text: { therapeut: 'Schleichende Entwicklung ohne eindeutigen Auslöser.', patient: 'Die Schmerzen haben sich schleichend entwickelt, ich kann mich an keinen eindeutigen Auslöser erinnern.' }, rationale: { therapeut: 'Chronischer Beginn. Starker OA-Prädiktor bei >50J.', patient: 'Ein langsamer Beginn deutet auf eine allmähliche Überreizung hin.' } },
+            { id: 'h2', category: 'history', weights: { D1: -5, D2: 6, D3: -5, D4: -5 }, text: { therapeut: 'Plötzliches Auftreten während Aktivität.', patient: 'Die Schmerzen traten eher plötzlich während einer bestimmten Aktivität auf.' }, rationale: { therapeut: 'Klassisches Muster für ITBS.', patient: 'Ein plötzliches Ereignis während des Trainings passt oft zum Läuferknie.' } },
+            { id: 'h3', category: 'history', weights: { D1: 3 }, text: { therapeut: 'Trainingssteigerung vor Symptombeginn.', patient: 'In den Wochen/Monaten vor Symptombeginn habe ich intensiver oder häufiger trainiert als noch davor (Wiedereinstieg ins Training, neuer Trainingsplan,..)' }, rationale: { therapeut: 'Load-Spike als Haupt-Triggerfaktor.', patient: 'Schnelle Änderungen in der Trainingslast sind oft ursächlich.' } },
+
+            // SYMPTOMS
+            { id: 's_custom1', category: 'symptoms', weights: { D1: 3, D2: 3, D3: 6 }, text: { therapeut: 'Schmerz nach Stop&Go Belastung.', patient: 'Ich spüre meine typischen Schmerzen vor allem im Anschluss an Stop&Go Sportarten, die schnelle Richtungswechsel, Sprints oder Sprünge beinhalten.' }, rationale: { therapeut: 'Starke PST-Korrelation. Bedingte OA-Punkte bei >50J.', patient: 'Typisch für Belastung der Kniescheibensehne.' } },
+            { id: 's_custom2', category: 'symptoms', weights: { D1: 3, D2: 6, D3: 3 }, text: { therapeut: 'Distanzabhängiger Belastungsschmerz.', patient: 'Meine typischen Schmerzen beginnen ab einer gewissen Distanz beim Laufen, Radfahren oder Wandern und werden zunehmend stärker, wenn ich weitermache.' }, rationale: { therapeut: 'ITBS-Leitsymptom. Bedingte OA-Punkte bei >50J.', patient: 'Klassisches Zeichen für Reizungen bei Ausdauerbelastung.' } },
+            { id: 's_custom3', category: 'symptoms', weights: { D1: 6, D2: -5, D3: -5 }, text: { therapeut: 'Mechanischer Schmerz (Squats/Treppen).', patient: 'Meine typischen Schmerzen sind nicht an eine bestimmte Sportart gekoppelt, sondern treten im Alltag bei Kniebeugen, beim Hin-Hocken oder beim Treppen-Steigen auf.' }, rationale: { therapeut: 'Starke PFSS-Korrelation. Bedingte OA-Punkte bei >50J.', patient: 'Deutet auf Druck hinter der Kniescheibe hin.' } },
+            { id: 's1', category: 'symptoms', weights: { D1: -5, D2: -5, D3: 6, D4: -5 }, text: { therapeut: 'Warm-up Phänomen.', patient: 'Ich spüre meinen Knieschmerz bei Sportbeginn, mit dem Aufwärmen bessern sich diese aber merklich.' }, rationale: { therapeut: 'Häufiger Befund bei PST (Tendinopathie).', patient: 'Typisch: "Eingelaufen" tut es weniger weh.' } },
+            { id: 's5', category: 'symptoms', weights: { D1: 6, D2: -5, D3: 3 }, text: { therapeut: 'Sitzschmerz (Movie Sign).', patient: 'Wenn ich länger sitze (zB. im Auto oder im Kino) beginnt mein typischer Knieschmerz.' }, rationale: { therapeut: 'PFSS-Klassiker. Bedingte OA-Punkte bei >50J.', patient: 'Langes Beugen reizt den Bereich hinter der Scheibe.' } },
+            { id: 's4', category: 'symptoms', weights: { D1: 3, D2: -5, D3: 3 }, text: { therapeut: 'Morgensteifigkeit.', patient: 'Morgens fühlt sich mein Knie die ersten 30min steif an.' }, rationale: { therapeut: 'Degenerativer Hinweis (OA-Marker).', patient: 'Klassisches Zeichen für Anlaufschwierigkeiten im Gelenk.' } },
+            { id: 's2', category: 'symptoms', weights: { D1: 3, D3: 3 }, text: { therapeut: 'Krepitation (Knirschen).', patient: 'Wenn ich mein Knie bewege, höre oder fühle ich ein Knirschen und Reiben im Gelenk.' }, rationale: { therapeut: 'Hinweis auf Knorpelbeteiligung.', patient: 'Deutet auf Reibung im Gelenk hin.' } },
+
+            // LOCATION - IMAGES
+            { id: 'img1', category: 'location_image', weights: { D3: 6 }, pos: { x: 60, y: 76, r: 6 }, shortTitle: { therapeut: 'Sehnenansatz Oben', patient: 'Sehnenansatz Oben' }, rationale: { therapeut: 'Ort: Oberer Sehnenansatz.', patient: 'Oberer Sehnenansatz.' } },
+            { id: 'img2', category: 'location_image', weights: { D3: 6 }, pos: { x: 60, y: 95, r: 6 }, shortTitle: { therapeut: 'Sehne Mitte', patient: 'Sehne Mitte' }, rationale: { therapeut: 'Ort: Sehnenmitte.', patient: 'Sehnenmitte.' } },
+            { id: 'img3', category: 'location_image', weights: { D3: 6 }, pos: { x: 60, y: 115, r: 7 }, shortTitle: { therapeut: 'Sehnenansatz Unten', patient: 'Sehnenansatz Unten' }, rationale: { therapeut: 'Ort: Unterer Sehnenansatz.', patient: 'Unterer Sehnenansatz.' } },
+            { id: 'img4', category: 'location_image', weights: { D2: 6 }, pos: { x: 32, y: 65, r: 8 }, shortTitle: { therapeut: 'Außenseite punktuell', patient: 'Außenseite punktuell' }, rationale: { therapeut: 'Punktuelle Lokalisation am lateralen Epicondylus (ITBS).', patient: 'Typischer Ort für den Schmerz beim Läuferknie.' } },
+            { id: 'img5', category: 'location_image', weights: { D1: 3 }, pos: { type: 'ring' }, shortTitle: { therapeut: 'Um Kniescheibe herum', patient: 'um Kniescheibe herum' }, rationale: { therapeut: 'Peripatelläres Schmerzbild. Starker OA-Prädiktor bei >50J.', patient: 'Hinweis auf Reizung um die Kniescheibe.' } },
+            { id: 'img6', category: 'location_image', weights: { D1: 3 }, pos: { type: 'broad', x: 60, y: 65 }, shortTitle: { therapeut: 'Hinter Kniescheibe', patient: 'hinter Kniescheibe' }, rationale: { therapeut: 'Retropatelläres Schmerzbild. Starker OA-Prädiktor bei >50J.', patient: 'Hinweis auf Reizung hinter der Kniescheibe.' } },
+            { id: 'img7', category: 'location_image', weights: { D1: 3 }, pos: { type: 'diffusePatella' }, shortTitle: { therapeut: 'Ant. Diffus', patient: 'flächig vorne' }, rationale: { therapeut: 'Flächiger Schmerz vorderseitig. Bedingte OA-Punkte bei >50J.', patient: 'Flächiger Schmerz an der Vorderseite.' } },
+            { id: 'img8', category: 'location_image', weights: { D1: 3 }, pos: { type: 'medialStripe' }, shortTitle: { therapeut: 'Medial', patient: 'flächig Innenseite' }, rationale: { therapeut: 'Flächiger Schmerz medial. Bedingte OA-Punkte bei >50J.', patient: 'Flächiger Schmerz an der Innenseite.' } },
+            { id: 'img9', category: 'location_image', weights: { D1: 3, D2: 3 }, pos: { type: 'lateralStripe' }, shortTitle: { therapeut: 'Lateral fl.', patient: 'flächig Außenseite' }, rationale: { therapeut: 'Flächiger Schmerz lateral. Korrelation mit PFSS und ITBS. Bedingte OA-Punkte bei >50J.', patient: 'Flächiger Schmerz an der Außenseite.' } },
+
+            // LOCATION - NÄHERE BESCHREIBUNG
+            { id: 'l1', category: 'location', weights: { D1: -5, D2: -15, D3: 6, D4: -5 }, text: { therapeut: 'Schmerz ausschließlich punktuell auf der Sehne unterhalb der Kniescheibe', patient: 'Mein Schmerz ist ausschließlich punktuell auf der Sehne unterhalb der Kniescheibe.' }, rationale: { therapeut: 'Pfad-Diagnostik: Fokus auf PST (D3).', patient: 'Die Lokalisation passt sehr spezifisch zur Belastungsreaktion der Sehne.' } },
+            { id: 'l2', category: 'location', weights: { D1: -5, D2: 6, D3: -15, D4: -5 }, text: { therapeut: 'Schmerz ausschließlich an der Außenseite des Knies', patient: 'Mein Schmerz tritt ausschließlich an der Außenseite des Knies auf.' }, rationale: { therapeut: 'Pfad-Diagnostik: Fokus auf ITBS (D2).', patient: 'Die Lokalisation passt sehr spezifisch zum sogenannten Läuferknie.' } },
+            { id: 'l3', category: 'location', weights: { D1: 6, D2: -5, D3: -5, D4: 3 }, text: { therapeut: 'Flächiger Schmerz an verschiedenen Stellen, kann wechseln', patient: 'Mein Schmerz ist flächig an verschiedenen Stellen und kann auch mal wechseln.' }, rationale: { therapeut: 'Pfad-Diagnostik: Fokus auf PFSS (D1). Bedingte OA-Punkte bei >50J.', patient: 'Flächige und wechselnde Schmerzen sind typisch für Reizungen hinter der Kniescheibe.' } }
+        ];
+
+        let selected = new Set();
+        const referenceImages = statements.filter(s => s.category === 'location_image');
+
+        function setExclusive(category, id) {
+            statements.filter(s => s.category === category).forEach(s => selected.delete(s.id));
+            selected.add(id);
+            renderAll();
+            calculate();
+        }
+
+        function setSide(side) {
+            selectedSide = side;
+            document.querySelectorAll('#side-links, #side-rechts').forEach(b => b.classList.remove('side-btn-active'));
+            document.getElementById(`side-${side}`).classList.add('side-btn-active');
+            renderAll();
+            calculate();
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('#mode-patient, #mode-therapeut').forEach(b => b.classList.remove('mode-btn-active'));
+            document.getElementById(`mode-${mode}`).classList.add('mode-btn-active');
+            const ui = contentData[mode];
+            document.getElementById('page-title').textContent = ui.pageTitle;
+            document.getElementById('label-demographics').innerHTML = `<i class="fa-solid fa-id-card text-indigo-500"></i> ${ui.labelDemographics}`;
+            document.getElementById('label-history').innerHTML = `<i class="fa-solid fa-clock-rotate-left text-blue-500"></i> ${ui.labelHistory}`;
+            document.getElementById('label-symptoms').innerHTML = `<i class="fa-solid fa-heart-pulse text-red-500"></i> ${ui.labelSymptoms}`;
+            document.getElementById('label-location').innerHTML = `<i class="fa-solid fa-crosshairs text-purple-500"></i> ${ui.labelLocation}`;
+            document.getElementById('label-visual-ref').textContent = ui.labelVisualRef;
+            document.getElementById('label-result-title').textContent = ui.labelResultTitle;
+            document.getElementById('label-empty').textContent = ui.labelEmpty;
+            document.getElementById('label-explanation').textContent = ui.labelExplanation;
+            renderAll();
+            calculate();
+        }
+
+        function renderAll() {
+            const containers = {
+                history: document.getElementById('history-container'),
+                symptoms: document.getElementById('symptoms-container'),
+                location: document.getElementById('location-statements-container'),
+                activity: document.getElementById('activity-container')
+            };
+            Object.values(containers).forEach(c => { if(c) c.innerHTML = ''; });
+
+            ['age', 'gender'].forEach(cat => {
+                statements.filter(s => s.category === cat).forEach(s => {
+                    const btn = document.getElementById(s.id);
+                    if (btn) {
+                        if (selected.has(s.id)) btn.classList.add('demo-btn-active');
+                        else btn.classList.remove('demo-btn-active');
+                        btn.textContent = s.text[currentMode];
+                    }
+                });
+            });
+
+            statements.filter(s => !['age', 'gender', 'location_image'].includes(s.category)).forEach(s => {
+                const isSel = selected.has(s.id);
+                const card = document.createElement('div');
+                card.className = `statement-card bg-white border-2 rounded-lg p-3 cursor-pointer flex items-start gap-3 ${isSel ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`;
+                card.innerHTML = `<div class="mt-0.5 w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${isSel ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}"><i class="fa-solid fa-check text-[10px] text-white ${isSel ? '' : 'opacity-0'}"></i></div><p class="text-sm font-medium text-gray-700 leading-snug">${s.text[currentMode]}</p>`;
+                card.onclick = () => { if(selected.has(s.id)) selected.delete(s.id); else selected.add(s.id); renderAll(); calculate(); };
+                const target = containers[s.category];
+                if (target) target.appendChild(card);
+            });
+
+            const imgCont = document.getElementById('location-images-container');
+            if (imgCont) {
+                imgCont.innerHTML = '';
+                referenceImages.forEach(s => {
+                    const isSel = selected.has(s.id);
+                    const card = document.createElement('div');
+                    card.className = `bg-white border-2 rounded-xl p-2 cursor-pointer flex flex-col items-center relative transition-all ${isSel ? 'border-purple-500 bg-purple-50 shadow-md' : 'border-gray-200 hover:border-purple-300'}`;
+                    card.innerHTML = `<div class="absolute top-2 left-2 w-4 h-4 rounded-full border flex items-center justify-center z-10 ${isSel ? 'bg-purple-600 border-purple-600' : 'bg-white border-gray-300'}"><i class="fa-solid fa-check text-[10px] text-white ${isSel ? '' : 'opacity-0'}"></i></div><div class="w-full h-28 image-wrapper mb-2">${getKneeSvg(s.pos)}</div><p class="text-[10px] font-bold text-gray-700 uppercase tracking-tighter text-center leading-tight">${s.shortTitle ? s.shortTitle[currentMode] : ""}</p>`;
+                    card.onclick = () => { if(selected.has(s.id)) selected.delete(s.id); else selected.add(s.id); renderAll(); calculate(); };
+                    imgCont.appendChild(card);
+                });
+            }
+        }
+
+        function calculate() {
+            const container = document.getElementById('results-container');
+            const empty = document.getElementById('empty-state');
+            const insufficient = document.getElementById('insufficient-data-state');
+            
+            if (selected.size === 0) {
+                container.classList.add('hidden');
+                insufficient.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+            
+            if (selected.size < 5) {
+                container.classList.add('hidden');
+                empty.classList.add('hidden');
+                insufficient.classList.remove('hidden');
+                const fill = document.getElementById('progress-bar-fill');
+                const text = document.getElementById('progress-text');
+                const pct = (selected.size / 5) * 100;
+                fill.style.width = `${pct}%`;
+                text.textContent = `${selected.size}/5`;
+                return;
+            }
+
+            container.classList.remove('hidden');
+            empty.classList.add('hidden');
+            insufficient.classList.add('hidden');
+
+            const ui = contentData[currentMode];
+            let rawPoints = { D1: 0, D2: 0, D3: 0, D4: 0 };
+            const active = statements.filter(s => selected.has(s.id));
+            const hasHistorySelected = active.some(s => s.category === 'history');
+            const isAge3 = selected.has('age3');
+
+            active.forEach(s => {
+                if ((s.category === 'age' || s.category === 'gender' || s.category === 'activity') && !hasHistorySelected) return;
+
+                let effectiveWeights = { ...s.weights };
+
+                if (s.id === 'gen1' && selected.has('age1')) effectiveWeights = { D2: 3, D3: 3 };
+                else if (s.id === 'gen2' && selected.has('age1')) effectiveWeights = { D1: 3, D2: 3 };
+                if ((s.id === 'act1' || s.id === 'act2') && isAge3) effectiveWeights.D4 = (effectiveWeights.D4 || 0) + 3;
+                if (s.id === 'h1' && isAge3) effectiveWeights.D4 = (effectiveWeights.D4 || 0) + 6;
+                if (s.id === 'h3') {
+                    if (selected.has('act1')) effectiveWeights.D3 = (effectiveWeights.D3 || 0) + 6;
+                    if (selected.has('act2')) effectiveWeights.D2 = (effectiveWeights.D2 || 0) + 6;
+                }
+                if (isAge3) {
+                    if (s.id === 's_custom1' || s.id === 's_custom2') {
+                        effectiveWeights.D4 = (effectiveWeights.D4 || 0) + 3;
+                        effectiveWeights.D1 = (effectiveWeights.D1 || 0) - 5;
+                        effectiveWeights.D2 = (effectiveWeights.D2 || 0) - 5;
+                        effectiveWeights.D3 = (effectiveWeights.D3 || 0) - 5;
+                    }
+                    if (s.id === 's_custom3' || s.id === 's4' || s.id === 's2') effectiveWeights.D4 = (effectiveWeights.D4 || 0) + 6;
+                    if (s.id === 's5') {
+                        effectiveWeights.D4 = (effectiveWeights.D4 || 0) + 6;
+                        effectiveWeights.D1 = (effectiveWeights.D1 || 0) - 5;
+                        effectiveWeights.D3 = (effectiveWeights.D3 || 0) - 5;
+                    }
+                    if (s.id === 'img5' || s.id === 'img6') effectiveWeights.D4 = (effectiveWeights.D4 || 0) + 6;
+                    if (s.id === 'img7' || s.id === 'img8' || s.id === 'img9') effectiveWeights.D4 = (effectiveWeights.D4 || 0) + 3;
+                    if (s.id === 'l3') {
+                        effectiveWeights.D4 = (effectiveWeights.D4 || 0) + 3;
+                        effectiveWeights.D1 = (effectiveWeights.D1 || 0) - 5;
+                        effectiveWeights.D2 = (effectiveWeights.D2 || 0) - 5;
+                        effectiveWeights.D3 = (effectiveWeights.D3 || 0) - 5;
+                    }
+                }
+
+                Object.entries(effectiveWeights).forEach(([key, points]) => {
+                    if (rawPoints.hasOwnProperty(key)) rawPoints[key] += points;
+                });
+            });
+
+            // Patterns PST
+            let pstMatches = (selected.has('age1')?1:0) + (selected.has('act1')?1:0) + (selected.has('h1')?1:0) + (selected.has('h3')?1:0) + (selected.has('s_custom1')?1:0) + (selected.has('s1')?1:0) + ((selected.has('img1')||selected.has('img2')||selected.has('img3'))?1:0) + (selected.has('l1')?1:0);
+            let pstBonus = hasHistorySelected ? (pstMatches > 6 ? 6 : (pstMatches > 5 ? 3 : 0)) : 0;
+            rawPoints.D3 += pstBonus;
+
+            // Patterns ITBS
+            let itbsMatches = (selected.has('act2')?1:0) + (selected.has('h2')?1:0) + (selected.has('h3')?1:0) + (selected.has('s_custom2')?1:0) + ((selected.has('img4')||selected.has('img9'))?1:0) + (selected.has('l2')?1:0);
+            let itbsBonus = hasHistorySelected ? (itbsMatches > 5 ? 6 : (itbsMatches > 4 ? 3 : 0)) : 0;
+            rawPoints.D2 += itbsBonus;
+
+            // Patterns OA
+            let oaMatches = (selected.has('age3')?1:0) + (selected.has('h1')?1:0) + (selected.has('s_custom3')?1:0) + (selected.has('s4')?1:0) + (selected.has('s2')?1:0) + (['img5','img6','img7','img8','img9'].some(id=>selected.has(id))?1:0) + (selected.has('l3')?1:0);
+            let oaBonus = hasHistorySelected ? (oaMatches > 6 ? 6 : (oaMatches > 5 ? 3 : 0)) : 0;
+            rawPoints.D4 += oaBonus;
+
+            let clampedPoints = { D1: Math.max(0, rawPoints.D1), D2: Math.max(0, rawPoints.D2), D3: Math.max(0, rawPoints.D3), D4: Math.max(0, rawPoints.D4) };
+            const totalPoints = Object.values(clampedPoints).reduce((a, b) => a + b, 0);
+            const barsContainer = document.getElementById('diagnosis-bars');
+            barsContainer.innerHTML = '';
+            
+            const diagnosisList = [
+                { id: 'D1', name: ui.labelD1Name, color: 'bg-orange-500', bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800' },
+                { id: 'D2', name: ui.labelD2Name, color: 'bg-teal-500', bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-800' },
+                { id: 'D3', name: ui.labelD3Name, color: 'bg-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' },
+                { id: 'D4', name: ui.labelD4Name, color: 'bg-yellow-500', bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800' }
+            ];
+
+            let highestDiag = null;
+            let highestPercent = -1;
+
+            diagnosisList.forEach(d => {
+                const percent = totalPoints > 0 ? Math.round((clampedPoints[d.id] / totalPoints) * 100) : 0;
+                if (percent > highestPercent) {
+                    highestPercent = percent;
+                    highestDiag = d;
+                }
+                const bar = document.createElement('div');
+                bar.innerHTML = `<div class="flex justify-between items-end mb-1"><span class="font-bold text-gray-800 text-[10px] uppercase">${d.name}</span><span class="font-bold text-xs text-gray-600">${percent}%</span></div><div class="w-full bg-gray-100 rounded-full h-1.5"><div class="${d.color} h-1.5 rounded-full transition-all duration-500" style="width: ${percent}%"></div></div>`;
+                barsContainer.appendChild(bar);
+            });
+
+            // Update Info Box (Strikt ab 70% Wahrscheinlichkeit)
+            const infoBox = document.getElementById('dynamic-diagnosis-info');
+            if (highestPercent >= 70 && highestDiag) {
+                const infoTitle = document.getElementById('info-box-title');
+                const infoDesc = document.getElementById('info-box-desc');
+                const profile = diagnosisProfiles[highestDiag.id];
+
+                infoBox.className = `mt-6 p-4 rounded-xl border-2 flex gap-3 transition-all duration-300 ${highestDiag.bg} ${highestDiag.border} ${highestDiag.text}`;
+                infoTitle.textContent = profile.name;
+                infoDesc.textContent = profile.description;
+                infoBox.classList.remove('hidden');
+            } else {
+                infoBox.classList.add('hidden');
+            }
+
+            const jCont = document.getElementById('justifications-container');
+            jCont.innerHTML = '';
+
+            // Pattern Bonus Displays
+            if (pstBonus > 0) appendPatternBadge(jCont, 'blue', 'D3', pstBonus, 'PST', pstMatches, 8);
+            if (itbsBonus > 0) appendPatternBadge(jCont, 'teal', 'D2', itbsBonus, 'ITBS', itbsMatches, 6);
+            if (oaBonus > 0) appendPatternBadge(jCont, 'yellow', 'D4', oaBonus, 'OA', oaMatches, 7);
+
+            active.sort((a,b) => (a.category > b.category ? 1 : -1)).forEach((s, i) => {
+                if ((s.category === 'age' || s.category === 'gender' || s.category === 'activity') && !hasHistorySelected) return;
+                let dw = { ...s.weights };
+                if (s.id === 'gen1' && selected.has('age1')) dw = { D2: 3, D3: 3 };
+                else if (s.id === 'gen2' && selected.has('age1')) dw = { D1: 3, D2: 3 };
+                if ((s.id === 'act1' || s.id === 'act2') && isAge3) dw.D4 = (dw.D4 || 0) + 3;
+                if (s.id === 'h1' && isAge3) dw.D4 = (dw.D4 || 0) + 6;
+                if (s.id === 'h3') {
+                    if (selected.has('act1')) dw.D3 = (dw.D3 || 0) + 6;
+                    if (selected.has('act2')) dw.D2 = (dw.D2 || 0) + 6;
+                }
+                if (isAge3) {
+                    if (s.id === 's_custom1' || s.id === 's_custom2') { dw.D4=(dw.D4||0)+3; dw.D1=(dw.D1||0)-5; dw.D2=(dw.D2||0)-5; dw.D3=(dw.D3||0)-5; }
+                    if (s.id === 's_custom3' || s.id === 's4' || s.id === 's2') dw.D4=(dw.D4||0)+6;
+                    if (s.id === 's5') { dw.D4=(dw.D4||0)+6; dw.D1=(dw.D1||0)-5; dw.D3=(dw.D3||0)-5; }
+                    if (s.id === 'img5' || s.id === 'img6') dw.D4=(dw.D4||0)+6;
+                    if (s.id === 'img7' || s.id === 'img8' || s.id === 'img9') dw.D4=(dw.D4||0)+3;
+                    if (s.id === 'l3') { dw.D4=(dw.D4||0)+3; dw.D1=(dw.D1||0)-5; dw.D2=(dw.D2||0)-5; dw.D3=(dw.D3||0)-5; }
+                }
+                const weightEntries = Object.entries(dw).filter(([_, v]) => v !== 0);
+                if (weightEntries.length === 0) return;
+                const badges = weightEntries.map(([k, v]) => `<span class="${v > 0 ? colors[k] : 'bg-red-700'} text-white px-1.5 py-0.5 rounded text-[8px] font-medium">${k} ${v > 0 ? '+' : ''}${v}</span>`).join('');
+                const div = document.createElement('div');
+                div.className = "border rounded bg-white mb-1 shadow-sm";
+                div.innerHTML = `<button class="w-full text-left p-2 text-[10px] font-bold flex justify-between items-center bg-gray-50 border-b hover:bg-gray-100" onclick="toggleAcc('acc-${i}')"><div class="flex items-center gap-2 overflow-hidden"><div class="flex gap-1 shrink-0">${badges}</div><span class="truncate pl-1 text-gray-700">${s.shortTitle ? s.shortTitle[currentMode] : s.text[currentMode]}</span></div><i class="fa-solid fa-chevron-down text-gray-300 transition-transform" id="icon-acc-${i}"></i></button><div id="acc-${i}" class="accordion-content text-[10px] px-2 bg-white"><div class="py-2 text-gray-600 leading-relaxed border-l-2 border-indigo-200 pl-3 my-1">${s.rationale[currentMode]}</div></div>`;
+                jCont.appendChild(div);
+            });
+        }
+
+        function appendPatternBadge(container, color, diag, bonus, label, matches, total) {
+            const div = document.createElement('div');
+            div.className = `border rounded bg-${color}-50 mb-1.5 shadow-sm border-${color}-200`;
+            div.innerHTML = `<button class="w-full text-left p-2.5 text-[11px] font-bold flex justify-between items-center bg-${color}-100 border-b hover:bg-${color}-200" onclick="toggleAcc('acc-pattern-${diag}')"><div class="flex items-center gap-2 overflow-hidden"><div class="flex gap-1 shrink-0"><span class="bg-${color}-600 text-white px-1.5 py-0.5 rounded text-[9px] font-medium shadow-sm">${diag} +${bonus}</span></div><span class="truncate pl-1 text-${color}-800">Klinisches Muster: ${label}</span></div><i class="fa-solid fa-chevron-down text-${color}-400 transition-transform" id="icon-acc-pattern-${diag}"></i></button><div id="acc-pattern-${diag}" class="accordion-content text-[11px] px-2.5 bg-white"><div class="py-2.5 text-gray-600 leading-relaxed border-l-2 border-${color}-400 pl-3 my-2">Es wurden ${matches} von ${total} Leitsymptomen erkannt.</div></div>`;
+            container.appendChild(div);
+        }
+
+        window.toggleAcc = (id) => {
+            const el = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            if (el && icon) { el.classList.toggle('open'); icon.style.transform = el.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0)'; }
+        };
+
+        function switchTab(tab) {
+            document.getElementById('view-diagnostik').classList.toggle('hidden', tab !== 'diagnostik');
+        }
+
+        setMode('patient');
+    </script>
+</body>
+</html>
